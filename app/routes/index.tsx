@@ -46,7 +46,27 @@ export async function loader() {
 }
 
 export async function action() {
-  await db.insert(workoutLogs).values({ completed_at: new Date() })
+  let now = new Date()
+  let todayStart = new Date(now)
+  todayStart.setHours(0, 0, 0, 0)
+  let todayEnd = new Date(now)
+  todayEnd.setHours(23, 59, 59, 999)
+
+  let existing = await db
+    .select()
+    .from(workoutLogs)
+    .where(
+      and(
+        gte(workoutLogs.completed_at, todayStart),
+        lte(workoutLogs.completed_at, todayEnd),
+      ),
+    )
+
+  if (existing.length > 0) {
+    return { ok: true }
+  }
+
+  await db.insert(workoutLogs).values({ completed_at: now })
   return { ok: true }
 }
 
